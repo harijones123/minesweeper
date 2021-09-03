@@ -98,10 +98,12 @@ class game:
             self.show_board()
         while self.gameState == "playing":
             self.play_turn()
+            if self.board_revealed == [[True for i in range(0,self.rows)] for j in range(0,self.cols)]:
+                self.gameState = "winner"
+                print("Winner winner chicken dinner")
 
-    
 #initialise game
-currentGame = game(9,9,10)
+currentGame = game(5,5,5)
 currentGame.show_board()
 #first move (generate board once first move is made)
 currentGame.play_game()
