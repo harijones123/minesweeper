@@ -1,5 +1,6 @@
-import random as rd 
+import random
 import numpy as np
+import time
 
 def get_neighbours(square,cols,rows):
     x,y = square
@@ -22,7 +23,7 @@ class Game:
         self.gameState = "playing"
     def make_first_move(self,selection=None):
         if selection is None:
-            selection = rd.choice(self.board_coords)
+            selection = random.choice(self.board_coords)
         self.generate_board(first_move=selection) 
         self.select_cell(selection)
     def generate_board(self,first_move=None) :
@@ -34,7 +35,7 @@ class Game:
             first_move_nbrs = get_neighbours(first_move,self.cols,self.rows)
             board_coords_temp = [c for c in board_coords_temp if c not in first_move_nbrs]
         #get random sample of potential mines
-        mine_coords = rd.sample(board_coords_temp,self.n_mines)
+        mine_coords = random.sample(board_coords_temp,self.n_mines)
         self.mine_coords = mine_coords
         #fill in numbers around mines
         for mine in mine_coords:
@@ -51,7 +52,6 @@ class Game:
             #selected mine, game over
             self.gameState = "gameover"
             self.board[x][y] = 11
-            print("GAME OVER")
         else:
             self.reveal_cell(selection)
     def flag_cell(self,cell):
@@ -67,7 +67,7 @@ class Game:
                 selection_nbrs = get_neighbours(selection,self.cols,self.rows)
                 for n in selection_nbrs:
                     self.reveal_cell(n)
-    def show_board(self):
+    def show_board(self,t=0):
         if self.gameState == "gameover":
             for mine in self.mine_coords:
                 x,y = mine
@@ -82,6 +82,7 @@ class Game:
         board_disp[board_disp=="10"] = "F"
         board_disp[board_disp=="11"] = "B"
         print(board_disp)
+        time.sleep(t)
     def play_turn(self):
         move,cell = user_input()
         if move == "F":
@@ -90,7 +91,6 @@ class Game:
             self.select_cell(cell)
         self.show_board()
     def play_game(self):
-        #first move
         move,cell = user_input()
         if move == "F":
             print("Currently don't support Flag as first move")
@@ -100,9 +100,15 @@ class Game:
             self.show_board()
         while self.gameState == "playing":
             self.play_turn()
-            if len(self.revealed_coords)==self.cols*self.rows:
-                self.gameState = "winner"
+            self.win_condition()
+            if self.gameState == "winner":    
                 print("Winner winner chicken dinner")
+            if self.gameState == "gameover":        
+                print("GAME OVER")
+    def win_condition(self):
+        if len(self.revealed_coords)==self.cols*self.rows:
+            self.gameState = "winner"
+
 
 class Player:
     def __init__(self,game):
@@ -121,32 +127,50 @@ class Player:
                 self.active_cells.remove(coord)
     def find_mines(self,coord,nbrs):
         x,y = coord
-        unrevealed_nbrs = self.game.revealed_coords.intersection(nbrs)
-        if len(unrevealed_nbrs) == self.game.board[x][y]:
+        unrevealed_nbrs = set(nbrs) - self.game.revealed_coords
+        flagged_nbrs = self.flagged_coords.intersection(nbrs)
+        if len(unrevealed_nbrs)+len(flagged_nbrs) == self.game.board[x][y]:
             for cell in unrevealed_nbrs:
                 self.game.flag_cell(cell)
                 self.flagged_coords.add(cell)
     def find_safe(self,coord,nbrs):
         x,y = coord 
         flagged_nbrs = self.flagged_coords.intersection(nbrs)
-        if len(flagged_nbrs) == self.game.board[x][y]:
-            for cell in flagged_nbrs:
+        if len(flagged_nbrs) >= self.game.board[x][y]:
+            for cell in set(nbrs) - self.game.revealed_coords - flagged_nbrs:
                 self.game.select_cell(cell)
     def play_turn(self):
         for coord in self.active_cells:
             nbrs = get_neighbours(coord,self.game.cols,self.game.rows)
             self.find_mines(coord,nbrs)
+            #if len(self.game.revealed_coords)!=self.game.cols*self.game.rows:
             self.find_safe(coord,nbrs)
         self.refresh_active_cells()
-    def play_game(self):
+    def make_guess(self):
+        neighbours = set([])
+        for active_cell in self.active_cells:
+            neighbours.update(get_neighbours(active_cell,self.game.cols,self.game.rows))
+        potential_cells = neighbours - self.game.revealed_coords
+        self.game.select_cell(random.choice(list(potential_cells)))
+    def play_game(self,t=0):
+        self.game.show_board(t)
         self.make_first_move()
-        self.game.show_board()
+        self.game.show_board(t)
+        revealed_coords_prev = set([])
         while self.game.gameState == "playing":
             self.play_turn()
+            if self.game.revealed_coords == revealed_coords_prev:
+                self.make_guess()
+            revealed_coords_prev = self.game.revealed_coords
+            self.game.win_condition()
+            print(self.game.gameState)
+            self.game.show_board(t)
+
+
 
 
 
 #initialise game
-currentGame = Game(5,5,5)
+currentGame = Game(8,5,5)
 currentPlayer = Player(currentGame)
-currentPlayer.play_game()
+currentPlayer.play_game(t=2)
