@@ -103,8 +103,8 @@ class Game:
             self.win_condition()
             if self.gameState == "winner":    
                 print("Winner winner chicken dinner")
-            if self.gameState == "gameover":        
-                print("GAME OVER")
+            if self.gameState == "gameover":    
+                print("Game Over")
     def win_condition(self):
         if len(self.revealed_coords)==self.cols*self.rows:
             self.gameState = "winner"
@@ -133,18 +133,21 @@ class Player:
             for cell in unrevealed_nbrs:
                 self.game.flag_cell(cell)
                 self.flagged_coords.add(cell)
+        self.game.win_condition()
     def find_safe(self,coord,nbrs):
         x,y = coord 
         flagged_nbrs = self.flagged_coords.intersection(nbrs)
         if len(flagged_nbrs) >= self.game.board[x][y]:
             for cell in set(nbrs) - self.game.revealed_coords - flagged_nbrs:
                 self.game.select_cell(cell)
+        self.game.win_condition()
     def play_turn(self):
         for coord in self.active_cells:
             nbrs = get_neighbours(coord,self.game.cols,self.game.rows)
-            self.find_mines(coord,nbrs)
-            #if len(self.game.revealed_coords)!=self.game.cols*self.game.rows:
-            self.find_safe(coord,nbrs)
+            if self.game.gameState == "playing":
+                self.find_mines(coord,nbrs)
+            if self.game.gameState == "playing":
+                self.find_safe(coord,nbrs)
         self.refresh_active_cells()
     def make_guess(self):
         neighbours = set([])
@@ -158,19 +161,19 @@ class Player:
         self.game.show_board(t)
         revealed_coords_prev = set([])
         while self.game.gameState == "playing":
-            self.play_turn()
-            if self.game.revealed_coords == revealed_coords_prev:
-                self.make_guess()
-            revealed_coords_prev = self.game.revealed_coords
-            self.game.win_condition()
             print(self.game.gameState)
+            self.play_turn()
+            if self.game.revealed_coords == set(revealed_coords_prev):
+                self.make_guess()
+            revealed_coords_prev = list(self.game.revealed_coords)
             self.game.show_board(t)
+        print(self.game.gameState)
 
 
 
 
 
 #initialise game
-currentGame = Game(8,5,5)
+currentGame = Game(8,8,10)
 currentPlayer = Player(currentGame)
-currentPlayer.play_game(t=2)
+currentPlayer.play_game()
