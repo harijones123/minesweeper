@@ -53,7 +53,8 @@ class Player:
         for active_cell in self.active_cells:
             neighbours.update(get_neighbours(active_cell,self.game.cols,self.game.rows))
         potential_cells = neighbours - self.game.revealed_coords
-        self.game.select_cell(random.choice(list(potential_cells)))
+        if len(potential_cells)>0:
+            self.game.select_cell(random.choice(list(potential_cells)))
     def play_game(self,t=0):
         self.game.show_board(t)
         self.make_first_move()
@@ -67,8 +68,16 @@ class Player:
             revealed_coords_prev = list(self.game.revealed_coords)
             self.game.show_board(t)
         print(self.game.gameState)
+    def play_game_eval(self):
+        self.make_first_move()
+        revealed_coords_prev = set([])
+        while self.game.gameState == "playing":
+            self.play_turn()
+            if self.game.revealed_coords == set(revealed_coords_prev):
+                self.make_guess()
+            revealed_coords_prev = list(self.game.revealed_coords)
+        return self.game.gameState 
 
-#initialise game
-currentGame = Game(8,8,10)
+currentGame = Game(16,16,30)
 currentPlayer = Player(currentGame)
-currentPlayer.play_game(2)
+currentPlayer.play_game()
