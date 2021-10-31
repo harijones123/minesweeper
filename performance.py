@@ -1,5 +1,5 @@
 from game import Game
-from player_v2 import Player
+from player_v3 import Player
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -27,7 +27,7 @@ for nn in NN:
         
 for winrates in winrateses:
     plt.plot(n_mines,winrates)
-plt.title("Win-rate performance evaluation, v2")
+plt.title("Win-rate performance evaluation, v3")
 plt.xlabel("Number of mines")
 plt.ylabel("Win rate")
 plt.legend(["{nn}x{nn}".format(nn=x) for x in NN],title="Board size")

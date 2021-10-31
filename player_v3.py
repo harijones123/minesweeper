@@ -1,4 +1,4 @@
-#changes limited to make_guess()
+#changes limited to find_mines()
 import random
 import numpy as np
 import time
@@ -33,7 +33,27 @@ class Player:
             for cell in unrevealed_nbrs:
                 self.game.flag_cell(cell)
                 self.flagged_coords.add(cell)
+        elif 1<self.game.board[x][y]<=8:
+            flagged_nbrs = self.flagged_coords.intersection(nbrs)
+            self.find_mines_2(coord,nbrs,unrevealed_nbrs,flagged_nbrs)
         self.game.win_condition()
+    def find_mines_2(self,coord,nbrs,unrevealed_nbrs,flagged_nbrs):
+        "if cell in question is a 2,3,4,+, look out for any 1s that are touching it, and use overlap technique to identify mines"
+        x,y = coord
+        active_neighbours = self.active_cells.intersection(nbrs)
+        one_neighbours = {x for x in active_neighbours if self.game.board[x[0]][x[1]]==1}
+        #one_neighbours = filter(lambda x: self.game.board[x[0]][x[1]]==1, active_neighbours)
+        if len(one_neighbours)!=0:
+            for one_nbr in one_neighbours:
+                nbrs1 = get_neighbours(one_nbr,self.game.cols,self.game.rows)
+                unrevealed_nbrs1 = set(nbrs1) - self.game.revealed_coords
+                overlap = unrevealed_nbrs.intersection(unrevealed_nbrs1)
+                unrevealed_left = unrevealed_nbrs - overlap
+                if (len(overlap)>1) and (len(unrevealed_left)==self.game.board[x][y]-1-len(flagged_nbrs)):
+                    for cell in unrevealed_left:
+                        self.game.flag_cell(cell)
+                        self.flagged_coords.add(cell)
+
     def find_safe(self,coord,nbrs):
         x,y = coord 
         flagged_nbrs = self.flagged_coords.intersection(nbrs)
@@ -94,6 +114,6 @@ class Player:
             revealed_coords_prev = list(self.game.revealed_coords)
         return self.game.gameState 
 
-currentGame = Game(16,16,30)
+currentGame = Game(8,8,10)
 currentPlayer = Player(currentGame)
 currentPlayer.play_game()
